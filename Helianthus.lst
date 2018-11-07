@@ -2,262 +2,635 @@
 PIC ASSEMBLER LISTING
 Line    Address Opcode  Instruction
 ---------------------------------------------
-0001    0000            DATO  	EQU 0X21
-0002    0000            COUNTY 	EQU 0X22
-0003    0000            COUNTMINIX 	EQU 0X23
-0004    0000            LIMITY 	EQU 0X24
-0005    0000            LIMITMINIX 	EQU 0X25
-0006    0000            P1	EQU 0X26
-0007    0000            P2    	EQU 0X27
-0008    0000            COUNTX EQU 0X28
-0009    0000            LIMITX EQU 0X29
-0010    0000            VARMAXX	EQU	0X30
-0011    0000            VARMAXY	EQU	0X31
-0012    0000            
-0013    0000            
-0014    0000            INICIO
-0015    0000            
-0016    0000            	ORG		0X00
-0017    0000    2801    	GOTO	START
-0018    0001            ;--------------------DEFINIR ENTRADAS Y SALIDAS-----------------------
-0019    0001            START
-0020    0001            	;En los puertos: 1 -> entra | 0 -> sale
-0021    0001            	;BIT SET FILE
-0022    0001    1683    	BSF 	STATUS, 5	; COLOCAMOS 1 EN EL BIT 5 DE REG. ESTATUS
-0023    0002    0186    	CLRF	TRISB		;Todo B es salida
-0024    0003    0188    	CLRF	TRISD		;Todo D es salida
-0025    0004    1283    	BCF	STATUS, RP0	;TODOS LOS PINES DE B SON SALIDAS
-0026    0005            ;----------------INICIALIZAR VARIABLES -------------------------------
-0027    0005    3000    	MOVLW	0X00
-0028    0006    0086    	MOVWF 	PORTB  		;SET 0 a todas las patas del puerto B
-0029    0007    3000    	MOVLW	0X00
-0030    0008    0088    	MOVWF 	PORTD  		;SET 0 a todas las patas del puerto D
-0031    0009    30FF    	MOVLW 	0xFF		;255	
-0032    000A    00A4    	MOVWF 	LIMITY 		;LIMITY = 255	12|10 
-0033    000B    3020    	MOVLW 	0x20		;32	2|0
-0034    000C    00A5    	MOVWF 	LIMITMINIX		;LIMITMINIX = 32	2|0
-0035    000D    3010    	MOVLW	0x10		;16	1|0
-0036    000E    00A9    	MOVWF	LIMITX	;LIMITX = 16	1|0
-0037    000F    2049    	CALL 	LIMPIARY		;CONTADORY = 0
-0038    0010    204C    	CALL 	LIMPIARMINIX		;CONTADORMINIX = 0
-0039    0011    204F    	CALL 	LIMIPIARX	;CONTADORx = 0
-0040    0012            ;--------------------------- MAIN -----------------------------------
-0041    0012            					
-0042    0012            ENCONTRAR
-0043    0012            
-0044    0012    2022    	CALL	CICLOMINIX		;Mover en x, analizar y, regresar en y 
-0045    0013    0AA8    	INCF	COUNTX,1	;COUNTX++
-0046    0014    0829    	MOVF	LIMITX, W	;W = LIMITX
-0047    0015    0228    	SUBWF	COUNTX, w	;W = LIMITX - COUNTX
-0048    0016    1D03    	BTFSS	STATUS,Z	;SALTO SI LA RESTA DIO 0
-0049    0017    2812    	GOTO	ENCONTRAR		;REPETIR HASTA QUE COUNTX = LIMITX
-0050    0018    204F    	CALL	LIMIPIARX	;COUNTX = 0
-0051    0019    201B    	CALL 	CICLOX
-0052    001A    28BA    	GOTO 	END
-0053    001B            
-0054    001B            ;---------------------------CICLOS-------------------------------------
-0055    001B            CICLOX
-0056    001B    203C    	CALL 	CICLOMINIXREVERSA	;REGRESAR TODO EN X PARA NO ENREDAR CABLES
-0057    001C    0AA8    	INCF	COUNTX,1	;COUNTX++
-0058    001D    0829    	MOVF	LIMITX, W	;W = LIMITX
-0059    001E    0228    	SUBWF	COUNTX, w	;W = LIMITX - COUNTX
-0060    001F    1D03    	BTFSS	STATUS,Z	;SALTO SI LA RESTA DIO 0
-0061    0020    281B    	GOTO	CICLOX	;REPETIR HASTA QUE COUNTX = LIMITX
-0062    0021    28BA    	GOTO 	END		;TERMINAR EL PROGRAMA
-0063    0022            CICLOMINIX
-0064    0022    2052    	CALL 	EJEX		;ROTA EN EJE X
-0065    0023            
-0066    0023            	
-0067    0023            	;MOVE ON X
-0068    0023    0AA3    	INCF	COUNTMINIX,1	;COUNTMINIX++
-0069    0024    0825    	MOVF  	LIMITMINIX, w	;W = LIMITMINIX
-0070    0025    0223    	SUBWF 	COUNTMINIX,w	;W = W - COUNTMINIX
-0071    0026    1D03    	BTFSS 	STATUS,Z 	;SALTO SI LA RESTA DIO CERO
-0072    0027    2822    	GOTO 	CICLOMINIX		;REPETIR SI COUNTMINIX !=  LIMITMINIX
-0073    0028    202B    	CALL	CICLOY 		;MOVERME EN EJE Y y REGRESAR
-0074    0029    204C    	CALL 	LIMPIARMINIX		;COUNTMINIX = 0
-0075    002A    0008    	RETURN
-0076    002B            CICLOY				
-0077    002B    205B    	CALL 	EJEY		;ROTAR EN EL EJE Y
-0078    002C            	;C�DIGO PARA COMPARAR Y GUARDAR VALOR DE LA FOTORESISTENCIA-------
-0079    002C            
-0080    002C            	;-----------------------------------------
-0081    002C            	;MOVE ON Y
-0082    002C    0AA2    	INCF	COUNTY,1	;COUNTY++ 
-0083    002D    0824    	MOVF  	LIMITY, w	;W = LIMITY
-0084    002E    0222    	SUBWF 	COUNTY,w	;W = W - COUNTY
-0085    002F    1D03    	BTFSS 	STATUS,Z	;SALTO SI LA RESTA DIO 0
-0086    0030    282B    	GOTO 	CICLOY		;REPETIR SI COUNT !=  LIMITY
-0087    0031    2049    	CALL 	LIMPIARY		;COUNTY = 0
-0088    0032    2034    	CALL 	CICLOYREVERSA	;REGRESAR Y
-0089    0033    0008    	return
-0090    0034            CICLOYREVERSA
-0091    0034    2064    	CALL 	REVERSEEJEY	;ROTAR EN REVERSA EN EL EJE Y
-0092    0035    0AA2    	INCF	COUNTY,1	;COUNTY++	 
-0093    0036    0824    	MOVF  	LIMITY, w	;W = LIMITY
-0094    0037    0222    	SUBWF 	COUNTY,w	;W = LIMITY - COUNTY
-0095    0038    1D03    	BTFSS 	STATUS,Z	;SALTO SI LA RESTA DIO 0
-0096    0039    2834    	GOTO 	CICLOYREVERSA	;REPETIR SI COUNTY != LIMITY
-0097    003A    2049    	CALL 	LIMPIARY		;COUNTY = 0
-0098    003B    0008    	RETURN
-0099    003C            CICLOMINIXREVERSA
-0100    003C    206D    	CALL 	REVERSEEJEX	;ROTAR EN REVERSA EN EL EJE X
-0101    003D    0AA3    	INCF 	COUNTMINIX,1	;COUNTMINIX++ 
-0102    003E    0825    	MOVF  	LIMITMINIX, w	;W = LIMITMINIX
-0103    003F    0223    	SUBWF 	COUNTMINIX,w	;W = LIMITMINIX - COUNTMINIX
-0104    0040    1D03    	BTFSS 	STATUS,Z	;SALTO SI LA RESTA DIO 0
-0105    0041    283C    	GOTO 	CICLOMINIXREVERSA	;REPETIR SI COUNTMINIX != LIMITMINIX
-0106    0042    204C    	CALL 	LIMPIARMINIX		;COUNTMINIX = 0
-0107    0043    0008    	RETURN
-0108    0044            ;------------------------------RETRASO-------------------------------
-0109    0044            RETRASO 			; = 0.0001 segundos
-0110    0044    30A5    	MOVLW	0xA5	;165
-0111    0045    00A6    	MOVWF	p1	;pl = 165
-0112    0046            ESPERA
-0113    0046    0BA6    	DECFSZ	p1, f	;Decrementar f, saltar si es 0
-0114    0047    2846    	GOTO	ESPERA
-0115    0048    0008    	RETURN
-0116    0049            ;-----------LIMPIAR CONTADORES-----------------------------------------------
-0117    0049            LIMPIARY
-0118    0049    3000    	MOVLW 	0x00  
-0119    004A    00A2    	MOVWF 	COUNTY  
-0120    004B    0008    	RETURN
-0121    004C            LIMPIARMINIX
-0122    004C    3000    	MOVLW 	0x00  ;se asigna la literal a w (0x00)
-0123    004D    00A3    	MOVWF 	COUNTMINIX ;muevo w a COUNT 
-0124    004E    0008    	RETURN
-0125    004F            LIMIPIARX
-0126    004F    3000    	MOVLW 	0x00 
-0127    0050    00A8    	MOVWF 	COUNTX 
-0128    0051    0008    	RETURN
-0129    0052            ;----------------ROTAR EN LOS EJES -----------------------------------------
-0130    0052            EJEX
-0131    0052    2082    	CALL	MV07
-0132    0053    207A    	CALL	MV03
-0133    0054    208A    	CALL	MV11
-0134    0055    2086    	CALL	MV09
-0135    0056    2092    	CALL	MV13
-0136    0057    208E    	CALL	MV12
-0137    0058    2096    	CALL	MV14
-0138    0059    207E    	CALL	MV06
-0139    005A    0008    	RETURN
-0140    005B            EJEY	
-0141    005B    20A2    	CALL	MVY7
-0142    005C    209A    	CALL	MVY3
-0143    005D    20AA    	CALL	MVY11
-0144    005E    20A6    	CALL	MVY9
-0145    005F    20B2    	CALL	MVY13
-0146    0060    20AE    	CALL	MVY12
-0147    0061    20B6    	CALL	MVY14
-0148    0062    209E    	CALL	MVY6
-0149    0063    0008    	RETURN
-0150    0064            REVERSEEJEY
-0151    0064    209E    	CALL	MVY6
-0152    0065    20B6    	CALL	MVY14
-0153    0066    20AE    	CALL	MVY12
-0154    0067    20B2    	CALL	MVY13
-0155    0068    20A6    	CALL	MVY9
-0156    0069    20AA    	CALL	MVY11	
-0157    006A    209A    	CALL	MVY3
-0158    006B    20A2    	CALL	MVY7
-0159    006C    0008    	RETURN
-0160    006D            REVERSEEJEX
-0161    006D    207E    	CALL  	MV06
-0162    006E    2096    	CALL	MV14
-0163    006F    208E    	CALL	MV12
-0164    0070    2092    	CALL	MV13
-0165    0071    2086    	CALL	MV09
-0166    0072    208A    	CALL	MV11
-0167    0073    207A    	CALL	MV03
-0168    0074    2082    	CALL	MV07
-0169    0075    0008    	RETURN
-0170    0076            ;----------------------------MOVIEMIENTOS----------------------------------
-0171    0076            MV	
-0172    0076    2044    	CALL 	RETRASO		;Retraso de 0.0001 segundos
-0173    0077    0821    	MOVF	DATO, W		;W = DATO
-0174    0078    0086    	MOVWF	PORTB		;MOVER W AL PUERTO B
-0175    0079    0008    	RETURN
-0176    007A            MV03
-0177    007A    3030    	MOVLW	B'00110000'
-0178    007B    00A1    	MOVWF	DATO		;DATO = 0|3
-0179    007C    2076    	CALL	MV		;MUEVE DATO AL PUERTO B
-0180    007D    0008    	RETURN
-0181    007E            MV06
-0182    007E    3060    	MOVLW	B'01100000'
-0183    007F    00A1    	MOVWF	DATO		;DATO = 0|6
-0184    0080    2076    	CALL	MV		;MUEVE DATO AL PUERTO D
-0185    0081    0008    	RETURN
-0186    0082            MV07
-0187    0082    3070    	MOVLW	B'01110000'
-0188    0083    00A1    	MOVWF	DATO		;DATO = 0|7
-0189    0084    2076    	CALL	MV		;MUEVE DATO AL PUERTO D
-0190    0085    0008    	RETURN
-0191    0086            MV09
-0192    0086    3090    	MOVLW	B'10010000'	;DATO = 0|9
-0193    0087    00A1    	MOVWF	DATO		;MUEVE DATO AL PUERTO D
-0194    0088    2076    	CALL	MV
-0195    0089    0008    	RETURN
-0196    008A            MV11
-0197    008A    30B0    	MOVLW 	B'10110000'
-0198    008B    00A1    	MOVWF	DATO
-0199    008C    2076    	CALL	MV
-0200    008D    0008    	RETURN	
-0201    008E            MV12
-0202    008E    30C0    	MOVLW	B'11000000'
-0203    008F    00A1    	MOVWF	DATO		;DATO = 0|12
-0204    0090    2076    	CALL	MV		;MUEVE DATO AL PUERTO D
-0205    0091    0008    	RETURN
-0206    0092    30D0    MV13	MOVLW	B'11010000' 
-0207    0093    00A1    	MOVWF	DATO 
-0208    0094    2076    	CALL	MV 
-0209    0095    0008    	RETURN
-0210    0096            
-0211    0096    30E0    MV14	MOVLW	B'11100000' 
-0212    0097    00A1    	MOVWF	DATO 
-0213    0098    2076    	CALL	MV 
-0214    0099    0008    	RETURN
-0215    009A            
-0216    009A            MVY3
-0217    009A    3003    	MOVLW	B'00000011'
-0218    009B    00A1    	MOVWF	DATO		;DATO = 3|0
-0219    009C    2076    	CALL	MV		;MUEVE AL PUERTO D
-0220    009D    0008    	RETURN
-0221    009E            MVY6
-0222    009E    3006    	MOVLW	B'00000110'
-0223    009F    00A1    	MOVWF	DATO		;DATO = 6|0
-0224    00A0    2076    	CALL	MV		;MUEVE AL PUERTO D
-0225    00A1    0008    	RETURN
-0226    00A2            MVY7
-0227    00A2    3007    	MOVLW	B'00000111'
-0228    00A3    00A1    	MOVWF	DATO		;DATO = 7|0
-0229    00A4    2076    	CALL	MV		;MUEVE AL PUERTO D
-0230    00A5    0008    	RETURN
-0231    00A6            MVY9
-0232    00A6    3009    	MOVLW	B'00001001'
-0233    00A7    00A1    	MOVWF	DATO		;DATO = 9|0
-0234    00A8    2076    	CALL	MV		;MUEVE AL PUERTO D
-0235    00A9    0008    	RETURN
-0236    00AA            MVY11	
-0237    00AA    300B    	MOVLW 	B'00001011'
-0238    00AB    00A1    	MOVWF	DATO
-0239    00AC    2076    	CALL	MV
-0240    00AD    0008    	RETURN
-0241    00AE            MVY12
-0242    00AE    300C    	MOVLW	B'00001100'
-0243    00AF    00A1    	MOVWF	DATO		;DATO = 12|0
-0244    00B0    2076    	CALL	MV		;MUEVE AL PUERTO D
-0245    00B1    0008    	RETURN	
-0246    00B2            
-0247    00B2    300D    MVY13	MOVLW	B'00001101' 
-0248    00B3    00A1    	MOVWF	DATO 
-0249    00B4    2076    	CALL	MV 
-0250    00B5    0008    	RETURN
-0251    00B6            
-0252    00B6    300E    MVY14	MOVLW	B'00001110' 
-0253    00B7    00A1    	MOVWF	DATO 
-0254    00B8    2076    	CALL	MV 
-0255    00B9    0008    	RETURN
-0256    00BA            ;--------------------------------------------------------------------------
-0257    00BA            END
+0001    0000            ;Movimientos----
+0002    0000            DATO  	EQU 0X20		;Me sirve como variable auxiliar
+0003    0000            ContadorY 	EQU 0X21		;Lleva la cuenta de la cantidad de movientos en y
+0004    0000            ContadorMiniX 	EQU 0X22	;Lleva la cuenta de cantidad de movimientos pequeños en X
+0005    0000            LimiteY 	EQU 0X23		;Maxima cantidad de movimientos en y antes de regresar
+0006    0000            LimiteminiX	EQU 0X24	;Maxima cantidad de movimientos pequeños en X
+0007    0000            Variable	EQU 0X25		;Variable para el delay
+0008    0000            ContadorX	EQU 0X26		;Cantidad de veces que me movere en miniX
+0009    0000            LimiteX	EQU 0X27		;Cantidad de movimientos máximos en X
+0010    0000            ;Poder medir y guardar luz----
+0011    0000            ADC	EQU	0X28
+0012    0000            VALOR	EQU	0X29		;Obtiene el valor de luz actual
+0013    0000            VALORMAX	EQU	0X30	;Valor máximo de luz
+0014    0000            CounterA	EQU	0X31	;Contador Espera Jeff
+0015    0000            CounterB	EQU	0X32	;Contador Espera Jeff
+0016    0000            CounterC	EQU	0X33	;Contador Espera Jeff
+0017    0000            ;------------------------------------
+0018    0000            RegresoX	EQU	0X34	;Será el nuevo límite para X
+0019    0000            RegresoY 	EQU	0X35	;Será el nuevo límmite para Y
+0020    0000            ;Comunicacion----
+0021    0000            varB	EQU	0x36	;Numero Máximo de otra maquina
+0022    0000            varC	EQU	0x37	;Numero mínimo de otra maquina
+0023    0000            ;Imprimir----
+0024    0000            varE	EQU	0x38	;Variable a Mostrar en el display
+0025    0000            cont	EQU	0x39 	;Contador para saber que resultado mostrar el Imprimir resultados.
+0026    0000            
+0027    0000            INICIO
+0028    0000            
+0029    0000            	ORG		0X00
+0030    0000    2801    	GOTO	START
+0031    0001            ;--------------------DEFINIR ENTRADAS Y SALIDAS-----------------------
+0032    0001            START
+0033    0001            	;En los puertos: 1 -> entra | 0 -> sale
+0034    0001            	;BIT SET FILE
+0035    0001    1683    	BSF 	STATUS, 5	; COLOCAMOS 1 EN EL BIT 5 DE REG. ESTATUS
+0036    0002    0186    	CLRF	TRISB		;Todo B es salida
+0037    0003    0188    	CLRF	TRISD		;Todo D es salida
+0038    0004    300F    	MOVLW	B'00001111'	;Set 1 en los ultimos 4 bits de c
+0039    0005    0087    	MOVWF	TRISC
+0040    0006    1509        	bsf	TRISE, 2
+0041    0007    1489        	bsf	TRISE, 1
+0042    0008    1585    	bsf	TRISA, 3
+0043    0009    1283    	BCF	STATUS, RP0	;TODOS LOS PINES DE B SON SALIDAS
+0044    000A            ;----------------INICIALIZAR VARIABLES -------------------------------
+0045    000A    3000    	MOVLW	0X00
+0046    000B    0086    	MOVWF 	PORTB  		;SET 0 a todas las patas del puerto B
+0047    000C    3000    	MOVLW	0X00
+0048    000D    0088    	MOVWF 	PORTD  		;SET 0 a todas las patas del puerto D
+0049    000E    3000    	MOVLW	0X00
+0050    000F    00B9    	MOVWF 	cont
+0051    0010    3000    	MOVLW	0X00
+0052    0011    00B0    	MOVWF 	VALORMAX
+0053    0012    3000    	MOVLW	0X00
+0054    0013    00B4    	MOVWF 	RegresoX
+0055    0014    3000    	MOVLW	0X00
+0056    0015    00B5    	MOVWF 	RegresoY
+0057    0016    3008    	MOVLW	B'00001000'
+0058    0017    00B6    	MOVWF	varB
+0059    0018    3005    	MOVLW	B'00000101'
+0060    0019    00B7    	MOVWF	varC
+0061    001A    3000    	MOVLW	0X00
+0062    001B    00B1    	MOVWF 	CounterA
+0063    001C    3000    	MOVLW	0X00
+0064    001D    00B2    	MOVWF 	CounterB
+0065    001E    3000    	MOVLW	0X00
+0066    001F    00B3    	MOVWF 	CounterC
+0067    0020    30FF    	MOVLW 	0xFF		;255	
+0068    0021    00A3    	MOVWF 	LimiteY 		;LimiteY = 255	12|10 
+0069    0022    3020    	MOVLW 	0x20		;32	2|0
+0070    0023    00A4    	MOVWF 	LimiteminiX		;LimiteminiX = 32	2|0
+0071    0024    3010    	MOVLW	0x10		;16	1|0
+0072    0025    00A7    	MOVWF	LimiteX	;LimiteX = 16	1|0
+0073    0026    20F8    	CALL 	LIMPIARY		;CONTADORY = 0
+0074    0027    20FB    	CALL 	LIMPIARMINIX		;CONTADORMINIX = 0
+0075    0028    20FE    	CALL 	LIMIPIARX	;CONTADORx = 0
+0076    0029            ;-------------------------PROGRAMAR FOTORESISTENCIA-----------------
+0077    0029    1283    	bcf STATUS,RP0 ;Ir banco 0
+0078    002A    1303    	bcf STATUS,RP1
+0079    002B    3041    	movlw b'01000001' ;A/D conversion Fosc/8
+0080    002C    009F    	movwf ADCON0
+0081    002D            	;     	     7     6     5    4    3    2       1 0
+0082    002D            	; 1Fh ADCON0 ADCS1 ADCS0 CHS2 CHS1 CHS0 GO/DONE ? ADON
+0083    002D    1683    	bsf STATUS,RP0 ;Ir banco 1
+0084    002E    1303    	bcf STATUS,RP1
+0085    002F    3007    	movlw b'00000111'
+0086    0030    0081    	movwf OPTION_REG ;TMR0 preescaler, 1:156
+0087    0031            	;                7    6      5    4    3   2   1   0 
+0088    0031            	; 81h OPTION_REG RBPU INTEDG T0CS T0SE PSA PS2 PS1 PS0
+0089    0031    300E    	movlw b'00001110' ;A/D Port AN0/RA0
+0090    0032    009F    	movwf ADCON1
+0091    0033            	;            7    6     5 4 3     2     1     0 
+0092    0033            	; 9Fh ADCON1 ADFM ADCS2 ? ? PCFG3 PCFG2 PCFG1 PCFG0
+0093    0033    1405    	bsf TRISA,0 ;RA0 linea de entrada para el ADC
+0094    0034    1283    	bcf STATUS,RP0 ;Ir banco 0
+0095    0035    1303    	bcf STATUS,RP1
+0096    0036            ;--------------------------- CICLOS -----------------------------------
+0097    0036            					
+0098    0036            CICLOX
+0099    0036            
+0100    0036    2047    	CALL	CICLOMINIX		;Mover en x, analizar y, regresar en y 
+0101    0037    0AA6    	INCF	ContadorX,1	;ContadorX++
+0102    0038    0827    	MOVF	LimiteX, W	;W = LimiteX
+0103    0039    0226    	SUBWF	ContadorX, w	;W = LimiteX - ContadorX
+0104    003A    1D03    	BTFSS	STATUS,Z	;SALTO SI LA RESTA DIO 0
+0105    003B    2836    	GOTO	CICLOX		;REPETIR HASTA QUE ContadorX = LimiteX
+0106    003C    20FE    	CALL	LIMIPIARX	;ContadorX = 0
+0107    003D    2040    	CALL 	CICLOXREVERSA
+0108    003E    20FE    	CALL	LIMIPIARX
+0109    003F    28DB    	GOTO 	CICLOPOSX
+0110    0040            
+0111    0040            CICLOXREVERSA
+0112    0040    2050    	CALL 	CICLOMINIXREVERSA	;REGRESAR TODO EN X PARA NO ENREDAR CABLES
+0113    0041    0AA6    	INCF	ContadorX,1	;ContadorX++
+0114    0042    0827    	MOVF	LimiteX, W	;W = LimiteX
+0115    0043    0226    	SUBWF	ContadorX, w	;W = LimiteX - ContadorX
+0116    0044    1D03    	BTFSS	STATUS,Z	;SALTO SI LA RESTA DIO 0
+0117    0045    2840    	GOTO	CICLOXREVERSA	;REPETIR HASTA QUE ContadorX = LimiteX
+0118    0046    0008    	RETURN
+0119    0047            
+0120    0047            CICLOMINIX
+0121    0047    2101    	CALL 	EJEX		;ROTA EN EJE X
+0122    0048    0AA2    	INCF	ContadorMiniX,1	;ContadorMiniX++
+0123    0049    0824    	MOVF  	LimiteminiX, w	;W = LimiteminiX
+0124    004A    0222    	SUBWF 	ContadorMiniX,w	;W = W - ContadorMiniX
+0125    004B    1D03    	BTFSS 	STATUS,Z 	;SALTO SI LA RESTA DIO CERO
+0126    004C    2847    	GOTO 	CICLOMINIX		;REPETIR SI ContadorMiniX !=  LimiteminiX
+0127    004D    2058    	CALL	CICLOY 		;MOVERME EN EJE Y y REGRESAR
+0128    004E    20FB    	CALL 	LIMPIARMINIX		;ContadorMiniX = 0
+0129    004F    0008    	RETURN
+0130    0050            
+0131    0050            CICLOMINIXREVERSA
+0132    0050    211C    	CALL 	REVERSEEJEX	;ROTAR EN REVERSA EN EL EJE X
+0133    0051    0AA2    	INCF 	ContadorMiniX,1	;ContadorMiniX++ 
+0134    0052    0824    	MOVF  	LimiteminiX, w	;W = LimiteminiX
+0135    0053    0222    	SUBWF 	ContadorMiniX,w	;W = LimiteminiX - ContadorMiniX
+0136    0054    1D03    	BTFSS 	STATUS,Z	;SALTO SI LA RESTA DIO 0
+0137    0055    2850    	GOTO 	CICLOMINIXREVERSA	;REPETIR SI ContadorMiniX != LimiteminiX
+0138    0056    20FB    	CALL 	LIMPIARMINIX		;ContadorMiniX = 0
+0139    0057    0008    	RETURN
+0140    0058            
+0141    0058            CICLOY
+0142    0058    210A    	CALL 	EJEY		;ROTAR EN EL EJE Y				
+0143    0059            ;-------------GUARDAR VALOR DE LA FOTORESISTENCIA---------------------------
+0144    0059            ;AQUI VA EL CODIGO DE JEFF DE BUCLE Y LOS ESPERA.
+0145    0059            bucle:
+0146    0059            	;btfss INTCON,T0IF
+0147    0059            	;goto _bucle ;Esperar que el timer0 desborde
+0148    0059            	; SE DEBE DE COLOCAR UN DELAY PARA QUE ESPERE LA CONVERSION
+0149    0059    1503    	BSF  STATUS,Z
+0150    005A    2063    	CALL _PRESPERA
+0151    005B    110B    	bcf INTCON,T0IF ;Limpiar el indicador de desborde
+0152    005C    151F    	bsf ADCON0,GO ;Comenzar conversion A/D
+0153    005D            _espera:
+0154    005D    191F    	btfsc ADCON0,GO ;ADCON0 es 0? (la conversion esta completa?)
+0155    005E    285D    	goto _espera ;No, ir _espera
+0156    005F    081E    	movf ADRESH,W ;Si, W=ADRESH
+0157    0060            	; 1Eh ADRESH A/D Result Register High Byte
+0158    0060            	; 9Eh ADRESL A/D Result Register Low Byte 
+0159    0060    00A8    	movwf ADC ;ADC=W
+0160    0061    0828    	movfw ADC ;W = ADC
+0161    0062    2874        	goto  Escala9
+0162    0063            _PRESPERA:
+0163    0063    3055    	MOVLW 0X55
+0164    0064    00B1    	MOVWF CounterA
+0165    0065    00B2    	MOVWF COUNTERb
+0166    0066    00B3    	MOVWF COUNTERc	
+0167    0067    2069    	CALL ESPE
+0168    0068    0008    	RETURN	
+0169    0069            	
+0170    0069            ESPE:
+0171    0069    0BB1    	DECFSZ	CounterA,0X01
+0172    006A    2869    	GOTO	ESPE
+0173    006B    206D    	CALL	ESPE2
+0174    006C    0008    	RETURN
+0175    006D            ESPE2:
+0176    006D    0BB2    	DECFSZ	COUNTERb,0X01
+0177    006E    286D    	GOTO	ESPE2
+0178    006F    2071    	CALL	ESPE3
+0179    0070    0008    	RETURN
+0180    0071            ESPE3:
+0181    0071    0BB3    	DECFSZ	COUNTERc,0X01
+0182    0072    2871    	GOTO	ESPE3
+0183    0073    0008    	RETURN
+0184    0074            	;----OBTENER EL VALOR SEGÚN LA ESCALA----
+0185    0074            Escala9:
+0186    0074    30D2        movlw D'210'	;La escala 9: 195-210
+0187    0075    0228        subwf ADC, W
+0188    0076    1C03        btfss STATUS, C
+0189    0077    287C        goto Escala8
+0190    0078    3009        movlw B'00001001'
+0191    0079    00A9        movwf Valor
+0192    007A    21C1        call Nueve
+0193    007B    28C7        goto Comparar
+0194    007C            
+0195    007C            Escala8:
+0196    007C    30C2        movlw D'194'	;La escala 8: 175-194
+0197    007D    0228        subwf ADC, W
+0198    007E    1C03        btfss STATUS, C
+0199    007F    2884        goto Escala7
+0200    0080    3008        movlw B'00001000'
+0201    0081    00A9        movwf Valor
+0202    0082    21BE        call Ocho
+0203    0083    28C7        goto Comparar
+0204    0084            
+0205    0084            Escala7:		;La escala 7: 159-174
+0206    0084    30AE        movlw D'174'
+0207    0085    0228        subwf ADC, W
+0208    0086    1C03        btfss STATUS, C
+0209    0087    288C        goto Escala6
+0210    0088    3007        movlw B'00000111'
+0211    0089    00A9        movwf Valor
+0212    008A    21BB        call Siete
+0213    008B    28C7        goto Comparar
+0214    008C            
+0215    008C            Escala6:		;La escala 6: 139-158
+0216    008C    309E        movlw D'158'
+0217    008D    0228        subwf ADC, W
+0218    008E    1C03        btfss STATUS, C
+0219    008F    2894        goto Escala5
+0220    0090    3006        movlw B'00000110'
+0221    0091    00A9        movwf Valor
+0222    0092    21B8        call Seis
+0223    0093    28C7        goto Comparar
+0224    0094            
+0225    0094            Escala5:		;La escala 5: 118-138
+0226    0094    308A        movlw D'138'
+0227    0095    0228        subwf ADC, W
+0228    0096    1C03        btfss STATUS, C
+0229    0097    289C        goto Escala4
+0230    0098    3005        movlw B'00000101'
+0231    0099    00A9        movwf Valor
+0232    009A    21B5        call Cinco
+0233    009B    28C7        goto Comparar
+0234    009C            
+0235    009C            Escala4:		;La escala 4: 83-117
+0236    009C    3075        movlw D'117'
+0237    009D    0228        subwf ADC, W
+0238    009E    1C03        btfss STATUS, C
+0239    009F    28A4        goto Escala3
+0240    00A0    3004        movlw B'00000100'
+0241    00A1    00A9        movwf Valor
+0242    00A2    21B2        call Cuatro
+0243    00A3    28C7        goto Comparar
+0244    00A4            
+0245    00A4            Escala3:		;La escala 3: 52-82
+0246    00A4    3052        movlw D'82'
+0247    00A5    0228        subwf ADC, W
+0248    00A6    1C03        btfss STATUS, C
+0249    00A7    28AC        goto Escala2
+0250    00A8    3003        movlw B'00000011'
+0251    00A9    00A9        movwf Valor
+0252    00AA    21AF        call Tres
+0253    00AB    28C7        goto Comparar
+0254    00AC            
+0255    00AC            Escala2:		;La escala 2: 29-51
+0256    00AC    3033        movlw D'51'
+0257    00AD    0228        subwf ADC, W
+0258    00AE    1C03        btfss STATUS, C
+0259    00AF    28B4        goto Escala1
+0260    00B0    3002        movlw B'00000010'
+0261    00B1    00A9        movwf Valor
+0262    00B2    21AC        call Dos
+0263    00B3    28C7        goto Comparar
+0264    00B4            
+0265    00B4            Escala1:		;La escala 1: 1-28
+0266    00B4    301C        movlw D'28'
+0267    00B5    0228        subwf ADC, W
+0268    00B6    1C03        btfss STATUS, C
+0269    00B7    28BC        goto Escala0
+0270    00B8    3001        movlw B'00000001'
+0271    00B9    00A9        movwf Valor
+0272    00BA    21A9        call Uno
+0273    00BB    28C7        goto Comparar
+0274    00BC            
+0275    00BC            Escala0:		;La escala 0: 0
+0276    00BC    3000        movlw B'00000000'
+0277    00BD    00A9        movwf Valor
+0278    00BE    21A6        call Cero
+0279    00BF    28C7        goto Comparar
+0280    00C0            Intercambiar:
+0281    00C0    0829    	MOVFW	Valor
+0282    00C1    00B0    	MOVWF	ValorMax
+0283    00C2    0821    	MOVFW	ContadorY
+0284    00C3    00B5    	MOVWF	RegresoY
+0285    00C4    0826    	MOVFW	ContadorX
+0286    00C5    00B4    	MOVWF	RegresoX
+0287    00C6    0008    	Return
+0288    00C7            Comparar:
+0289    00C7    0830    	MOVFW	ValorMax	;w = valorMAX
+0290    00C8    0229    	SUBWF	Valor, W	;W = Valor - ValorMax
+0291    00C9    1803    	BTFSC	STATUS, C
+0292    00CA    20C0    	CALL	Intercambiar
+0293    00CB            
+0294    00CB            		
+0295    00CB            ;------------------------------------------------------------------------
+0296    00CB    0AA1    	INCF	ContadorY,1	;ContadorY++ 
+0297    00CC    0823    	MOVF  	LimiteY, w	;W = LimiteY
+0298    00CD    0221    	SUBWF 	ContadorY,w	;W = W - ContadorY
+0299    00CE    1D03    	BTFSS 	STATUS,Z	;SALTO SI LA RESTA DIO 0
+0300    00CF    2858    	GOTO 	CICLOY		;REPETIR SI COUNT !=  LimiteY
+0301    00D0    20F8    	CALL 	LIMPIARY		;ContadorY = 0
+0302    00D1    20D3    	CALL 	CICLOYREVERSA	;REGRESAR Y
+0303    00D2    0008    	return
+0304    00D3            CICLOYREVERSA
+0305    00D3    2113    	CALL 	REVERSEEJEY	;ROTAR EN REVERSA EN EL EJE Y
+0306    00D4    0AA1    	INCF	ContadorY,1	;ContadorY++	 
+0307    00D5    0823    	MOVF  	LimiteY, w	;W = LimiteY
+0308    00D6    0221    	SUBWF 	ContadorY,w	;W = LimiteY - ContadorY
+0309    00D7    1D03    	BTFSS 	STATUS,Z	;SALTO SI LA RESTA DIO 0
+0310    00D8    28D3    	GOTO 	CICLOYREVERSA	;REPETIR SI ContadorY != LimiteY
+0311    00D9    20F8    	CALL 	LIMPIARY		;ContadorY = 0
+0312    00DA    0008    	RETURN
+0313    00DB            ;---------------------------------- REGRESAR A LA POSICIÓN ---------------------------------
+0314    00DB            CICLOPOSX
+0315    00DB            
+0316    00DB    20EB    	CALL	CICLOMINIPOSX		;Mover en x, analizar y, regresar en y 
+0317    00DC    0AA6    	INCF	ContadorX,1	;ContadorX++
+0318    00DD    0834    	MOVF	RegresoX, W	;W = RegresoX
+0319    00DE    0226    	SUBWF	ContadorX, w	;W = LimiteX - ContadorX
+0320    00DF    1D03    	BTFSS	STATUS,Z	;SALTO SI LA RESTA DIO 0
+0321    00E0    28DB    	GOTO	CICLOPOSX		;REPETIR HASTA QUE ContadorX = RegresoX
+0322    00E1    20FE    	CALL	LIMIPIARX	;ContadorX = 0
+0323    00E2    28E3    	GOTO 	CICLOPOSY
+0324    00E3            
+0325    00E3            CICLOPOSY
+0326    00E3    210A    	CALL 	EJEY		;ROTAR EN EL EJE Y			
+0327    00E4    0AA1    	INCF	ContadorY,1	;ContadorY++ 
+0328    00E5    0835    	MOVF  	RegresoY, w	;W = LimiteY
+0329    00E6    0221    	SUBWF 	ContadorY,w	;W = W - ContadorY
+0330    00E7    1D03    	BTFSS 	STATUS,Z	;SALTO SI LA RESTA DIO 0
+0331    00E8    28E3    	GOTO 	CICLOPOSY		;REPETIR SI COUNT !=  CICLOPOSY
+0332    00E9    20F8    	CALL 	LIMPIARY		;ContadorY = 0
+0333    00EA    2969    	GOTO	MENUIMPR
+0334    00EB            
+0335    00EB            CICLOMINIPOSX
+0336    00EB    2101    	CALL 	EJEX		;ROTA EN EJE X
+0337    00EC    0AA2    	INCF	ContadorMiniX,1	;ContadorMiniX++
+0338    00ED    0824    	MOVF  	LimiteminiX, w	;W = LimiteminiX
+0339    00EE    0222    	SUBWF 	ContadorMiniX,w	;W = W - ContadorMiniX
+0340    00EF    1D03    	BTFSS 	STATUS,Z 	;SALTO SI LA RESTA DIO CERO
+0341    00F0    28EB    	GOTO 	CICLOMINIPOSX		;REPETIR SI ContadorMiniX !=  LimiteminiX
+0342    00F1    20FB    	CALL 	LIMPIARMINIX		;ContadorMiniX = 0
+0343    00F2    0008    	RETURN
+0344    00F3            
+0345    00F3            ;------------------------------RETRASO-------------------------------
+0346    00F3            RETRASO 			; = 0.0001 segundos
+0347    00F3    30A5    	MOVLW	0xA5	;165
+0348    00F4    00A5    	MOVWF	Variable	;pl = 165
+0349    00F5            ESPERA
+0350    00F5    0BA5    	DECFSZ	Variable, f	;Decrementar f, saltar si es 0
+0351    00F6    28F5    	GOTO	ESPERA
+0352    00F7    0008    	RETURN
+0353    00F8            ;-----------LIMPIAR CONTADORES-----------------------------------------------
+0354    00F8            LIMPIARY
+0355    00F8    3000    	MOVLW 	0x00  
+0356    00F9    00A1    	MOVWF 	ContadorY  
+0357    00FA    0008    	RETURN
+0358    00FB            LIMPIARMINIX
+0359    00FB    3000    	MOVLW 	0x00  ;se asigna la literal a w (0x00)
+0360    00FC    00A2    	MOVWF 	ContadorMiniX ;muevo w a COUNT 
+0361    00FD    0008    	RETURN
+0362    00FE            LIMIPIARX
+0363    00FE    3000    	MOVLW 	0x00 
+0364    00FF    00A6    	MOVWF 	ContadorX 
+0365    0100    0008    	RETURN
+0366    0101            ;----------------ROTAR EN LOS EJES -----------------------------------------
+0367    0101            EJEX
+0368    0101    2131    	CALL	MV07
+0369    0102    2129    	CALL	MV03
+0370    0103    2139    	CALL	MV11
+0371    0104    2135    	CALL	MV09
+0372    0105    2141    	CALL	MV13
+0373    0106    213D    	CALL	MV12
+0374    0107    2145    	CALL	MV14
+0375    0108    212D    	CALL	MV06
+0376    0109    0008    	RETURN
+0377    010A            EJEY	
+0378    010A    2151    	CALL	MVY7
+0379    010B    2149    	CALL	MVY3
+0380    010C    2159    	CALL	MVY11
+0381    010D    2155    	CALL	MVY9
+0382    010E    2161    	CALL	MVY13
+0383    010F    215D    	CALL	MVY12
+0384    0110    2165    	CALL	MVY14
+0385    0111    214D    	CALL	MVY6
+0386    0112    0008    	RETURN
+0387    0113            REVERSEEJEY
+0388    0113    214D    	CALL	MVY6
+0389    0114    2165    	CALL	MVY14
+0390    0115    215D    	CALL	MVY12
+0391    0116    2161    	CALL	MVY13
+0392    0117    2155    	CALL	MVY9
+0393    0118    2159    	CALL	MVY11	
+0394    0119    2149    	CALL	MVY3
+0395    011A    2151    	CALL	MVY7
+0396    011B    0008    	RETURN
+0397    011C            REVERSEEJEX
+0398    011C    212D    	CALL  	MV06
+0399    011D    2145    	CALL	MV14
+0400    011E    213D    	CALL	MV12
+0401    011F    2141    	CALL	MV13
+0402    0120    2135    	CALL	MV09
+0403    0121    2139    	CALL	MV11
+0404    0122    2129    	CALL	MV03
+0405    0123    2131    	CALL	MV07
+0406    0124    0008    	RETURN
+0407    0125            ;----------------------------MOVIEMIENTOS----------------------------------
+0408    0125            MV	
+0409    0125    20F3    	CALL 	RETRASO		;Retraso de 0.0001 segundos
+0410    0126    0820    	MOVF	DATO, W		;W = DATO
+0411    0127    0086    	MOVWF	PORTB		;MOVER W AL PUERTO B
+0412    0128    0008    	RETURN
+0413    0129            MV03
+0414    0129    3030    	MOVLW	B'00110000'
+0415    012A    00A0    	MOVWF	DATO		;DATO = 0|3
+0416    012B    2125    	CALL	MV		;MUEVE DATO AL PUERTO B
+0417    012C    0008    	RETURN
+0418    012D            MV06
+0419    012D    3060    	MOVLW	B'01100000'
+0420    012E    00A0    	MOVWF	DATO		;DATO = 0|6
+0421    012F    2125    	CALL	MV		;MUEVE DATO AL PUERTO D
+0422    0130    0008    	RETURN
+0423    0131            MV07
+0424    0131    3070    	MOVLW	B'01110000'
+0425    0132    00A0    	MOVWF	DATO		;DATO = 0|7
+0426    0133    2125    	CALL	MV		;MUEVE DATO AL PUERTO D
+0427    0134    0008    	RETURN
+0428    0135            MV09
+0429    0135    3090    	MOVLW	B'10010000'	;DATO = 0|9
+0430    0136    00A0    	MOVWF	DATO		;MUEVE DATO AL PUERTO D
+0431    0137    2125    	CALL	MV
+0432    0138    0008    	RETURN
+0433    0139            MV11
+0434    0139    30B0    	MOVLW 	B'10110000'
+0435    013A    00A0    	MOVWF	DATO
+0436    013B    2125    	CALL	MV
+0437    013C    0008    	RETURN	
+0438    013D            MV12
+0439    013D    30C0    	MOVLW	B'11000000'
+0440    013E    00A0    	MOVWF	DATO		;DATO = 0|12
+0441    013F    2125    	CALL	MV		;MUEVE DATO AL PUERTO D
+0442    0140    0008    	RETURN
+0443    0141    30D0    MV13	MOVLW	B'11010000' 
+0444    0142    00A0    	MOVWF	DATO 
+0445    0143    2125    	CALL	MV 
+0446    0144    0008    	RETURN
+0447    0145            
+0448    0145    30E0    MV14	MOVLW	B'11100000' 
+0449    0146    00A0    	MOVWF	DATO 
+0450    0147    2125    	CALL	MV 
+0451    0148    0008    	RETURN
+0452    0149            
+0453    0149            MVY3
+0454    0149    3003    	MOVLW	B'00000011'
+0455    014A    00A0    	MOVWF	DATO		;DATO = 3|0
+0456    014B    2125    	CALL	MV		;MUEVE AL PUERTO D
+0457    014C    0008    	RETURN
+0458    014D            MVY6
+0459    014D    3006    	MOVLW	B'00000110'
+0460    014E    00A0    	MOVWF	DATO		;DATO = 6|0
+0461    014F    2125    	CALL	MV		;MUEVE AL PUERTO D
+0462    0150    0008    	RETURN
+0463    0151            MVY7
+0464    0151    3007    	MOVLW	B'00000111'
+0465    0152    00A0    	MOVWF	DATO		;DATO = 7|0
+0466    0153    2125    	CALL	MV		;MUEVE AL PUERTO D
+0467    0154    0008    	RETURN
+0468    0155            MVY9
+0469    0155    3009    	MOVLW	B'00001001'
+0470    0156    00A0    	MOVWF	DATO		;DATO = 9|0
+0471    0157    2125    	CALL	MV		;MUEVE AL PUERTO D
+0472    0158    0008    	RETURN
+0473    0159            MVY11	
+0474    0159    300B    	MOVLW 	B'00001011'
+0475    015A    00A0    	MOVWF	DATO
+0476    015B    2125    	CALL	MV
+0477    015C    0008    	RETURN
+0478    015D            MVY12
+0479    015D    300C    	MOVLW	B'00001100'
+0480    015E    00A0    	MOVWF	DATO		;DATO = 12|0
+0481    015F    2125    	CALL	MV		;MUEVE AL PUERTO D
+0482    0160    0008    	RETURN	
+0483    0161            
+0484    0161    300D    MVY13	MOVLW	B'00001101' 
+0485    0162    00A0    	MOVWF	DATO 
+0486    0163    2125    	CALL	MV 
+0487    0164    0008    	RETURN
+0488    0165            
+0489    0165    300E    MVY14	MOVLW	B'00001110' 
+0490    0166    00A0    	MOVWF	DATO 
+0491    0167    2125    	CALL	MV 
+0492    0168    0008    	RETURN
+0493    0169            ;----------------------------------MOSTRAR RESULTADOS EN DISPLAY---------------------------------
+0494    0169            MENUIMPR: 
+0495    0169    216C    	CALL	MENU
+0496    016A    20F3    	CALL	RETRASO 
+0497    016B    2969    	GOTO	MENUIMPR
+0498    016C            	
+0499    016C            MENU ;Verificar si presiono el boton, anadir uno al contador.
+0500    016C    1985    	BTFSC	PORTA,3	
+0501    016D    216F    	CALL	Incrementar
+0502    016E            	;Segun el valor de contador, asignar el valor de varE e imprimir
+0503    016E    2976    	GOTO	SwitchCont
+0504    016F            Incrementar ;CONT++, SI ES MAYOR A 3 SE RESETEA. =========================	
+0505    016F    0AB9    	INCF	cont,1
+0506    0170    1939    	BTFSC	cont,2
+0507    0171    2173    	CALL	ResetCont
+0508    0172    0008    	RETURN
+0509    0173            ResetCont
+0510    0173    3000    	MOVLW	B'00000000'
+0511    0174    00B9    	MOVWF	cont
+0512    0175    0008    	RETURN
+0513    0176            SwitchCont	;Switch con el contador. casos 0,1,2,3 ========================
+0514    0176    1839    	BTFSC	cont,0
+0515    0177    297C    	GOTO	CI	;Caso Impar
+0516    0178    2979    	GOTO	CP	;Caso Par
+0517    0179            CP:
+0518    0179    18B9    	BTFSC	cont,1
+0519    017A    2985    	GOTO	case2	;10
+0520    017B    297F    	GOTO	case0	;00
+0521    017C            CI:
+0522    017C    18B9    	BTFSC	cont,1
+0523    017D    2988    	GOTO	case3	;11
+0524    017E    2982    	GOTO	case1	;01
+0525    017F            case0:
+0526    017F    0830    	MOVFW	ValorMax
+0527    0180    00B8    	MOVWF	varE
+0528    0181    298B    	GOTO	Imprimir
+0529    0182            case1:
+0530    0182    0836    	MOVFW	varB
+0531    0183    00B8    	MOVWF	varE
+0532    0184    298B    	GOTO	Imprimir
+0533    0185            case2:
+0534    0185    0837    	MOVFW	varC
+0535    0186    00B8    	MOVWF	varE
+0536    0187    298B    	GOTO	Imprimir
+0537    0188            case3:
+0538    0188    3002    	MOVLW	B'00000010'
+0539    0189    00B8    	MOVWF	varE
+0540    018A    298B    	GOTO	Imprimir
+0541    018B            
+0542    018B            Imprimir;MUESTRA EN UN DISPLAY EL VALOR DE varE =========================
+0543    018B            	;primer bit de entrada de varE
+0544    018B    1838    	BTFSC	varE,0
+0545    018C    299A    	GOTO	IMPAR;1,3,5,7,9
+0546    018D    298E    	GOTO	PAR ;0,2,4,6,8
+0547    018E            PAR ;0,2,4,6,8
+0548    018E            	;Segundo bit de entrada de varE
+0549    018E    18B8    	BTFSC	varE,1
+0550    018F    2997    	GOTO	PAR4 ;2,6
+0551    0190    2991    	GOTO	PAR2 ;0,4,8
+0552    0191            	
+0553    0191            PAR2 ;0,4,8
+0554    0191            	;tercer bit de entrada de C
+0555    0191    1938    	BTFSC	varE,2
+0556    0192    29B2    	GOTO	CUATRO
+0557    0193    2994    	GOTO	PAR3 ;0,8
+0558    0194            	
+0559    0194            PAR3 ;0,8
+0560    0194            	;cuarto bit de entrada de C
+0561    0194    19B8    	BTFSC	varE,3
+0562    0195    29BE    	GOTO	OCHO
+0563    0196    29A6    	GOTO	CERO
+0564    0197            PAR4 ;2,6
+0565    0197            	;tercer bit de entrada de C
+0566    0197    1938    	BTFSC	varE,2
+0567    0198    29B8    	GOTO	SEIS
+0568    0199    29AC    	GOTO	DOS
+0569    019A            IMPAR ;1,3,5,7,9
+0570    019A            	;Segundo bit de entrada de C
+0571    019A    18B8    	BTFSC	varE,1
+0572    019B    29A3    	GOTO	IMPAR4 ;3,7
+0573    019C    299D    	GOTO	IMPAR2 ;1,5,9
+0574    019D            IMPAR2 ;1,5,9
+0575    019D            	;tercer bit de entrada de C
+0576    019D    1938    	BTFSC	varE,2
+0577    019E    29B5    	GOTO	CINCO
+0578    019F    29A0    	GOTO	IMPAR3 ;1,9
+0579    01A0            IMPAR3 ;1,9
+0580    01A0            	;cuarto bit de entrada de C
+0581    01A0    19B8    	BTFSC	varE,3
+0582    01A1    29C1    	GOTO	NUEVE
+0583    01A2    29A9    	GOTO	UNO
+0584    01A3            IMPAR4 ;3,7
+0585    01A3            	;tercer bit de entrada de C
+0586    01A3    1938    	BTFSC	varE,2
+0587    01A4    29BB    	GOTO	SIETE
+0588    01A5    29AF    	GOTO	TRES	
+0589    01A6            CERO
+0590    01A6    303F    	MOVLW	B'00111111'
+0591    01A7    0088    	MOVWF	PORTD
+0592    01A8    0008    	RETURN
+0593    01A9            UNO
+0594    01A9    3006    	MOVLW	B'00000110'
+0595    01AA    0088    	MOVWF	PORTD
+0596    01AB    0008    	RETURN 
+0597    01AC            DOS
+0598    01AC    305B    	MOVLW	B'01011011'
+0599    01AD    0088    	MOVWF	PORTD
+0600    01AE    0008    	RETURN
+0601    01AF            TRES
+0602    01AF    304F    	MOVLW	B'01001111'
+0603    01B0    0088    	MOVWF	PORTD
+0604    01B1    0008    	RETURN 
+0605    01B2            
+0606    01B2            CUATRO
+0607    01B2    3066    	MOVLW	B'01100110'
+0608    01B3    0088    	MOVWF	PORTD
+0609    01B4    0008    	RETURN 
+0610    01B5            CINCO
+0611    01B5    306D    	MOVLW	B'01101101'
+0612    01B6    0088    	MOVWF	PORTD
+0613    01B7    0008    	RETURN 
+0614    01B8            SEIS
+0615    01B8    307D    	MOVLW	B'01111101'
+0616    01B9    0088    	MOVWF	PORTD
+0617    01BA    0008    	RETURN 
+0618    01BB            SIETE
+0619    01BB    3007    	MOVLW	B'00000111'
+0620    01BC    0088    	MOVWF	PORTD
+0621    01BD    0008    	RETURN 
+0622    01BE            
+0623    01BE            OCHO	
+0624    01BE    307F    	MOVLW	B'01111111'
+0625    01BF    0088    	MOVWF	PORTD
+0626    01C0    0008    	RETURN 
+0627    01C1            NUEVE
+0628    01C1    3067    	MOVLW	B'01100111'
+0629    01C2    0088    	MOVWF	PORTD
+0630    01C3    0008    	RETURN
 ---------------------------------------------
 Number of errors = 0
